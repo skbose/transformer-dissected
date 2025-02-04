@@ -1,0 +1,17 @@
+[project]
+name = "transformer-dissected"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Sourav Kumar Bose",email = "sourav.kumar.bose@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch (>=2.6.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
