@@ -20,7 +20,7 @@ from tqdm import tqdm
 from pathlib import Path
 
 
-def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
+def greedy_decode(model, source, source_mask, tokenizer_tgt, max_len, device):
     sos_idx = tokenizer_tgt.token_to_id('[SOS]')
     eos_idx = tokenizer_tgt.token_to_id('[EOS]')
 
@@ -72,7 +72,7 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
             assert encoder_input.size(0) == 1, "Batch size must be 1 for validation"
 
             # run through the encoder
-            model_out = greedy_decode(model, encoder_input, encoder_mask, tokenizer_src, tokenizer_tgt, max_len, device)
+            model_out = greedy_decode(model, encoder_input, encoder_mask, tokenizer_tgt, max_len, device)
             
             source_text = batch['src_text'][0]
             target_text = batch['tgt_text'][0]
@@ -131,17 +131,15 @@ def get_or_build_tokenizer(config, ds, lang):
 
 
 def get_ds(config):
-    ds_raw = load_dataset('opus_books', f'{config["lang_src"]}-{config["lang_tgt"]}', split='train')
+    # ds_raw = load_dataset('opus_books', f'{config["lang_src"]}-{config["lang_tgt"]}', split='train')
+    ds_raw = load_dataset('cfilt/iitb-english-hindi')
+
+    train_ds_raw = ds_raw['train']
+    val_ds_raw = ds_raw['validation']
 
     # Build tokenizers
-    tokenizer_src = get_or_build_tokenizer(config, ds_raw, config["lang_src"])
-    tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config["lang_tgt"])  
-
-    # Keep 90% for training and 10% for validation
-    train_ds_size = int(0.9 * len(ds_raw))
-    val_ds_size = len(ds_raw) - train_ds_size
-
-    train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
+    tokenizer_src = get_or_build_tokenizer(config, train_ds_raw, config["lang_src"])
+    tokenizer_tgt = get_or_build_tokenizer(config, train_ds_raw, config["lang_tgt"])  
 
     train_ds = BilingualDataset(
         train_ds_raw,
@@ -164,7 +162,7 @@ def get_ds(config):
     max_len_src = 0
     max_len_tgt = 0
 
-    for item in ds_raw:
+    for item in train_ds_raw:
         src_ids = tokenizer_src.encode(item['translation'][config['lang_src']]).ids
         tgt_ids = tokenizer_tgt.encode(item['translation'][config['lang_tgt']]).ids
         max_len_src = max(max_len_src, len(src_ids))
